@@ -6,6 +6,8 @@ if exists('g:autoloaded_fugitive')
 endif
 let g:autoloaded_fugitive = 1
 
+let s:ignore_whitespace_flag = ''
+
 " Section: Utility
 
 function! s:function(name) abort
@@ -2080,13 +2082,17 @@ function! fugitive#BufReadStatus() abort
     endif
 
     let diff = {'Staged': [], 'Unstaged': []}
+    let args = ['diff', '--color=never', '--no-ext-diff', '--no-prefix']
+    if !empty(s:ignore_whitespace_flag)
+      call add(args, s:ignore_whitespace_flag)
+    endif
     if len(staged)
       let diff['Staged'] =
-          \ s:LinesError(['diff', '--color=never', '--no-ext-diff', '--no-prefix', '--cached'])[0]
+          \ s:LinesError(args + ['--cached'])[0]
     endif
     if len(unstaged)
       let diff['Unstaged'] =
-          \ s:LinesError(['diff', '--color=never', '--no-ext-diff', '--no-prefix'])[0]
+          \ s:LinesError(args)[0]
     endif
     let b:fugitive_diff = diff
     let expanded = get(b:, 'fugitive_expanded', {'Staged': {}, 'Unstaged': {}})
@@ -6499,6 +6505,7 @@ function! fugitive#MapJumps(...) abort
     endif
     call s:Map('n', 'S',    ':<C-U>echoerr "Use gO"<CR>', '<silent>')
     call s:Map('n', 'dq', ":<C-U>call fugitive#DiffClose()<CR>", '<silent>')
+    call s:Map('n', 'dw', ":<C-U>call fugitive#ToggleDiffIgnoreWhitespace()<Bar>call fugitive#ReloadStatus(-1, 1)<CR>", '<silent>')
     call s:Map('n', '-', ":<C-U>exe 'Gedit ' . <SID>fnameescape(<SID>NavigateUp(v:count1))<Bar> if getline(1) =~# '^tree \x\{40,\}$' && empty(getline(2))<Bar>call search('^'.escape(expand('#:t'),'.*[]~\').'/\=$','wc')<Bar>endif<CR>", '<silent>')
     call s:Map('n', 'P',     ":<C-U>exe 'Gedit ' . <SID>fnameescape(<SID>ContainingCommit().'^'.v:count1.<SID>Relative(':'))<CR>", '<silent>')
     call s:Map('n', '~',     ":<C-U>exe 'Gedit ' . <SID>fnameescape(<SID>ContainingCommit().'~'.v:count1.<SID>Relative(':'))<CR>", '<silent>')
@@ -6955,6 +6962,14 @@ endfunction
 
 function! fugitive#detect(path) abort
   throw 'Third party code is using fugitive#detect() which has been removed. Contact the author if you have a reason to still use it'
+endfunction
+
+function! fugitive#ToggleDiffIgnoreWhitespace() abort
+  if empty(s:ignore_whitespace_flag)
+    let s:ignore_whitespace_flag = '-w'
+  else
+    let s:ignore_whitespace_flag = ''
+  endif
 endfunction
 
 " Section: End
