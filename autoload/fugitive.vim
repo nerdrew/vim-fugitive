@@ -4,6 +4,9 @@
 " The functions contained within this file are for internal use only.  For the
 " official API, see the commented functions in plugin/fugitive.vim.
 
+
+let s:ignore_whitespace_flag = ''
+
 " Section: Utility
 
 function! s:function(name) abort
@@ -2820,6 +2823,9 @@ function! s:StatusProcess(result, stat) abort
 
     let diff_cmd = stat.cmd + ['-c', 'diff.suppressBlankEmpty=false', '-c', 'core.quotePath=false', 'diff', '--color=never', '--no-ext-diff', '--no-prefix']
     let stat.diff = {'Staged': {'stdout': ['']}, 'Unstaged': {'stdout': ['']}}
+    if !empty(s:ignore_whitespace_flag)
+      call add(diff_cmd, s:ignore_whitespace_flag)
+    endif
     if len(staged)
       let stat.diff['Staged'] = fugitive#Execute(diff_cmd + ['--cached'], function('len'))
     endif
@@ -8049,6 +8055,7 @@ function! fugitive#MapJumps(...) abort
     endif
     call s:Map('n', 'S',    ':<C-U>echoerr "Use gO"<CR>', '<silent><unique>')
     call s:Map('n', 'dq', ":<C-U>call fugitive#DiffClose()<CR>", '<silent>')
+    call s:Map('n', 'dw', ":<C-U>call fugitive#ToggleDiffIgnoreWhitespace()<Bar>call fugitive#ReloadStatus(-1, 1)<CR>", '<silent>')
     call s:Map('n', '-', ":<C-U>exe 'Gedit ' . <SID>fnameescape(<SID>NavigateUp(v:count1))<Bar> if getline(1) =~# '^tree \x\{40,\}$' && empty(getline(2))<Bar>call search('^'.escape(expand('#:t'),'.*[]~\').'/\=$','wc')<Bar>endif<CR>", '<silent>')
     call s:Map('n', 'P',     ":<C-U>if !v:count<Bar>echoerr 'Use ~ (or provide a count)'<Bar>else<Bar>exe 'Gedit ' . <SID>fnameescape(<SID>ContainingCommit().'^'.v:count1.<SID>Relative(':'))<Bar>endif<CR>", '<silent>')
     call s:Map('n', '~',     ":<C-U>exe 'Gedit ' . <SID>fnameescape(<SID>ContainingCommit().'~'.v:count1.<SID>Relative(':'))<CR>", '<silent>')
@@ -8440,6 +8447,15 @@ endfunction
 
 function! fugitive#foldtext() abort
   return fugitive#Foldtext()
+endfunction
+
+function! fugitive#ToggleDiffIgnoreWhitespace() abort
+  if empty(s:ignore_whitespace_flag)
+    let s:ignore_whitespace_flag = '-w'
+  else
+    let s:ignore_whitespace_flag = ''
+  endif
+  echo 's:ignore_whitespace_flag="'.s:ignore_whitespace_flag.'"'
 endfunction
 
 " Section: End
