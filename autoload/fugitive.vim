@@ -5,7 +5,9 @@
 " official API, see the commented functions in plugin/fugitive.vim.
 
 
+let s:diff_context = 3
 let s:ignore_whitespace_flag = ''
+let s:untracked_files_flag = ''
 
 " Section: Utility
 
@@ -3059,7 +3061,11 @@ function! s:StatusRetrieve(bufnr, ...) abort
     let stat.running = stat.rev_parse
   else
     let stat.rev_parse = fugitive#Execute(rev_parse_cmd)
-    let status_cmd = cmd + ['status', '-bz', fugitive#GitVersion(2, 11) ? '--porcelain=v2' : '--porcelain']
+    let status_cmd = cmd + ['status', '-bz']
+    if !empty(s:untracked_files_flag)
+      call add(status_cmd, '--untracked-files=' . s:untracked_files_flag)
+    endif
+    call add(status_cmd, fugitive#GitVersion(2, 11) ? '--porcelain=v2' : '--porcelain')
     let stat.status = call('fugitive#Execute', [status_cmd, function('s:StatusProcess'), stat] + a:000)
     let stat.running = stat.status
   endif
@@ -8056,6 +8062,8 @@ function! fugitive#MapJumps(...) abort
     call s:Map('n', 'S',    ':<C-U>echoerr "Use gO"<CR>', '<silent><unique>')
     call s:Map('n', 'dq', ":<C-U>call fugitive#DiffClose()<CR>", '<silent>')
     call s:Map('n', 'dw', ":<C-U>call fugitive#ToggleDiffIgnoreWhitespace()<Bar>call fugitive#ReloadStatus(-1, 1)<CR>", '<silent>')
+    call s:Map('n', 'du', ":<C-U>call fugitive#ToggleUntrackedFiles()<Bar>call fugitive#ReloadStatus(-1, 1)<CR>", '<silent>')
+    call s:Map('n', 'dU', ":<C-U>call fugitive#ToggleUntrackedFiles('')<Bar>call fugitive#ReloadStatus(-1, 1)<CR>", '<silent>')
     call s:Map('n', '-', ":<C-U>exe 'Gedit ' . <SID>fnameescape(<SID>NavigateUp(v:count1))<Bar> if getline(1) =~# '^tree \x\{40,\}$' && empty(getline(2))<Bar>call search('^'.escape(expand('#:t'),'.*[]~\').'/\=$','wc')<Bar>endif<CR>", '<silent>')
     call s:Map('n', 'P',     ":<C-U>if !v:count<Bar>echoerr 'Use ~ (or provide a count)'<Bar>else<Bar>exe 'Gedit ' . <SID>fnameescape(<SID>ContainingCommit().'^'.v:count1.<SID>Relative(':'))<Bar>endif<CR>", '<silent>')
     call s:Map('n', '~',     ":<C-U>exe 'Gedit ' . <SID>fnameescape(<SID>ContainingCommit().'~'.v:count1.<SID>Relative(':'))<CR>", '<silent>')
@@ -8456,6 +8464,21 @@ function! fugitive#ToggleDiffIgnoreWhitespace() abort
     let s:ignore_whitespace_flag = ''
   endif
   echo 's:ignore_whitespace_flag="'.s:ignore_whitespace_flag.'"'
+endfunction
+
+function! fugitive#ToggleUntrackedFiles(...) abort
+  if a:0 > 0
+    let s:untracked_files_flag = a:1
+  elseif empty(s:untracked_files_flag)
+    let s:untracked_files_flag = 'no'
+  elseif s:untracked_files_flag == 'no'
+    let s:untracked_files_flag = 'normal'
+  elseif s:untracked_files_flag == 'normal'
+    let s:untracked_files_flag = 'all'
+  else
+    let s:untracked_files_flag = ''
+  endif
+  echo 's:untracked_files_flag="'.s:untracked_files_flag.'"'
 endfunction
 
 " Section: End

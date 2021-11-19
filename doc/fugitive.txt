@@ -324,6 +324,16 @@ I                       Invoke |:Git| add --patch or reset --patch on the file
 P                       under the cursor. On untracked files, this instead
                         calls |:Git| add --intent-to-add.
 
+                                                *fugitive_dw*
+dw                      Toggle `git diff -w` flag.
+
+                                                *fugitive_du*
+du                      Toggle `git status -u` flag: `no`, `normal`, and
+                        `all`. Default is no flag.
+
+                                                *fugitive_dU*
+dU                      Reset `git status -u` flag to the default.
+
                                                 *fugitive_d*
 Diff maps ~
                                                 *fugitive_dp*
