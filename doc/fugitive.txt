@@ -334,6 +334,15 @@ du                      Toggle `git status -u` flag: `no`, `normal`, and
                                                 *fugitive_dU*
 dU                      Reset `git status -u` flag to the default.
 
+                                                *fugitive_dc*
+dc                      Increase diff context by 3 lines.
+
+                                                *fugitive_dC*
+dC                      Decrease diff context by 3 lines.
+
+                                                *fugitive_dW*
+dW                      Toggle `git diff -W` flag (`--function-context`).
+
                                                 *fugitive_d*
 Diff maps ~
                                                 *fugitive_dp*

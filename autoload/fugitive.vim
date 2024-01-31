@@ -7,6 +7,7 @@
 
 let s:diff_context = 3
 let s:ignore_whitespace_flag = ''
+let s:diff_function_context_flag = ''
 let s:untracked_files_flag = ''
 
 " Section: Utility
@@ -2827,6 +2828,12 @@ function! s:StatusProcess(result, stat) abort
     let stat.diff = {'Staged': {'stdout': ['']}, 'Unstaged': {'stdout': ['']}}
     if !empty(s:ignore_whitespace_flag)
       call add(diff_cmd, s:ignore_whitespace_flag)
+    endif
+    if !empty(s:diff_function_context_flag)
+      call add(diff_cmd, s:diff_function_context_flag)
+    endif
+    if s:diff_context >= 0
+      call add(diff_cmd, '-U'..s:diff_context)
     endif
     if len(staged)
       let stat.diff['Staged'] = fugitive#Execute(diff_cmd + ['--cached'], function('len'))
@@ -8064,6 +8071,9 @@ function! fugitive#MapJumps(...) abort
     call s:Map('n', 'dw', ":<C-U>call fugitive#ToggleDiffIgnoreWhitespace()<Bar>call fugitive#ReloadStatus(-1, 1)<CR>", '<silent>')
     call s:Map('n', 'du', ":<C-U>call fugitive#ToggleUntrackedFiles()<Bar>call fugitive#ReloadStatus(-1, 1)<CR>", '<silent>')
     call s:Map('n', 'dU', ":<C-U>call fugitive#ToggleUntrackedFiles('')<Bar>call fugitive#ReloadStatus(-1, 1)<CR>", '<silent>')
+    call s:Map('n', 'dc', ":<C-U>call fugitive#DiffContext(1)<Bar>call fugitive#ReloadStatus(-1, 1)<CR>", '<silent>')
+    call s:Map('n', 'dC', ":<C-U>call fugitive#DiffContext(-1)<Bar>call fugitive#ReloadStatus(-1, 1)<CR>", '<silent>')
+    call s:Map('n', 'dW', ":<C-U>call fugitive#DiffToggleFunctionContext()<Bar>call fugitive#ReloadStatus(-1, 1)<CR>", '<silent>')
     call s:Map('n', '-', ":<C-U>exe 'Gedit ' . <SID>fnameescape(<SID>NavigateUp(v:count1))<Bar> if getline(1) =~# '^tree \x\{40,\}$' && empty(getline(2))<Bar>call search('^'.escape(expand('#:t'),'.*[]~\').'/\=$','wc')<Bar>endif<CR>", '<silent>')
     call s:Map('n', 'P',     ":<C-U>if !v:count<Bar>echoerr 'Use ~ (or provide a count)'<Bar>else<Bar>exe 'Gedit ' . <SID>fnameescape(<SID>ContainingCommit().'^'.v:count1.<SID>Relative(':'))<Bar>endif<CR>", '<silent>')
     call s:Map('n', '~',     ":<C-U>exe 'Gedit ' . <SID>fnameescape(<SID>ContainingCommit().'~'.v:count1.<SID>Relative(':'))<CR>", '<silent>')
@@ -8479,6 +8489,23 @@ function! fugitive#ToggleUntrackedFiles(...) abort
     let s:untracked_files_flag = ''
   endif
   echo 's:untracked_files_flag="'.s:untracked_files_flag.'"'
+endfunction
+
+function! fugitive#DiffContext(delta) abort
+  let s:diff_context += a:delta * 3
+  if s:diff_context < 0
+    let s:diff_context = 0
+  endif
+  echo 's:diff_context='.s:diff_context
+endfunction
+
+function! fugitive#DiffToggleFunctionContext() abort
+  if empty(s:diff_function_context_flag)
+    let s:diff_function_context_flag = '-W'
+  else
+    let s:diff_function_context_flag = ''
+  endif
+  echo 's:diff_function_context_flag="'.s:diff_function_context_flag.'"'
 endfunction
 
 " Section: End
